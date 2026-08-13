@@ -68,10 +68,14 @@ storage:
     # These options allow you to fine-tune how your database connection behaves.
     # Add more lines under properties as needed.
     #
+    # Property names differ per driver; properties a driver does not know are ignored.
+    # The defaults below apply to MySQL/MariaDB. For PostgreSQL, use for example
+    # "sslmode": "disable" (or "require") instead of useSSL.
+    #
     # Documentation for available options:
     # MySQL: https://dev.mysql.com/doc/connector-j/en/connector-j-reference-configuration-properties.html
     # MariaDB: https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j#optional-url-parameters
-    # PostgreSQL: https://jdbc.postgresql.org/documentation/publicapi/org/postgresql/PGProperty.html
+    # PostgreSQL: https://jdbc.postgresql.org/documentation/use/#connection-parameters
     properties:
       # Disable SSL (set to true if your DB requires SSL/TLS encryption)
       useSSL: false

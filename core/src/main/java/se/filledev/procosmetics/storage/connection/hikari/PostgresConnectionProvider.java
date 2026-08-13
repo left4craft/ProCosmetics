@@ -17,6 +17,8 @@
  */
 package se.filledev.procosmetics.storage.connection.hikari;
 
+import java.util.Map;
+
 public class PostgresConnectionProvider extends HikariConnectionProvider {
 
     @Override
@@ -27,5 +29,15 @@ public class PostgresConnectionProvider extends HikariConnectionProvider {
     @Override
     protected String getDriverJdbcIdentifier() {
         return "postgresql";
+    }
+
+    @Override
+    protected void setDefaultProperties(Map<String, Object> properties) {
+        super.setDefaultProperties(properties);
+        // Unlike MySQL/MariaDB, PostgreSQL's socketTimeout is measured in seconds
+        properties.put("socketTimeout", "30");
+        properties.put("tcpKeepAlive", "true");
+        properties.put("reWriteBatchedInserts", "true");
+        properties.put("ApplicationName", "ProCosmetics");
     }
 }

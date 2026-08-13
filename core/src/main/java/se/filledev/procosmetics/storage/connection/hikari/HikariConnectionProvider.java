@@ -24,7 +24,10 @@ import se.filledev.procosmetics.api.config.Config;
 import se.filledev.procosmetics.storage.connection.ConnectionProvider;
 
 import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +85,7 @@ public abstract class HikariConnectionProvider implements ConnectionProvider {
     private void configurePoolSettings(HikariConfig hikariConfig, Config config) {
         hikariConfig.setMaximumPoolSize(config.getInt("storage.hikari.maximum_pool_size"));
         hikariConfig.setMinimumIdle(config.getInt("storage.hikari.minimum_idle"));
-        hikariConfig.setMinimumIdle(config.getInt("storage.hikari.idle_timeout"));
+        hikariConfig.setIdleTimeout(config.getInt("storage.hikari.idle_timeout"));
         hikariConfig.setMaxLifetime(config.getInt("storage.hikari.maximum_lifetime"));
         hikariConfig.setKeepaliveTime(config.getInt("storage.hikari.keepalive_time"));
         hikariConfig.setConnectionTimeout(config.getInt("storage.hikari.connection_timeout"));
@@ -97,7 +100,12 @@ public abstract class HikariConnectionProvider implements ConnectionProvider {
 
         // Apply all properties to HikariConfig
         for (Map.Entry<String, Object> property : properties.entrySet()) {
-            hikariConfig.addDataSourceProperty(property.getKey(), property.getValue());
+            if (property.getValue() == null) {
+                continue;
+            }
+            // Values must be strings: JDBC drivers read them via Properties.getProperty,
+            // which returns null for non-string values such as YAML booleans and numbers
+            hikariConfig.addDataSourceProperty(property.getKey(), property.getValue().toString());
         }
     }
 
@@ -127,6 +135,30 @@ public abstract class HikariConnectionProvider implements ConnectionProvider {
     public void shutdown() {
         if (hikari != null && !hikari.isClosed()) {
             hikari.close();
+        }
+        deregisterShadedDrivers();
+    }
+
+    /**
+     * Deregisters JDBC drivers that were loaded by this plugin's class loader, such as
+     * the shaded PostgreSQL driver. Drivers register themselves with the JVM-global
+     * {@link DriverManager}, which would otherwise keep the plugin's class loader
+     * reachable after the plugin is disabled or reloaded. Drivers provided by the
+     * server (e.g. MySQL) live in a parent class loader and are left untouched.
+     */
+    private void deregisterShadedDrivers() {
+        Enumeration<Driver> drivers = DriverManager.getDrivers();
+
+        while (drivers.hasMoreElements()) {
+            Driver driver = drivers.nextElement();
+
+            if (driver.getClass().getClassLoader() == getClass().getClassLoader()) {
+                try {
+                    DriverManager.deregisterDriver(driver);
+                } catch (SQLException e) {
+                    plugin.getLogger().log(Level.WARNING, "Failed to deregister JDBC driver " + driver + ".", e);
+                }
+            }
         }
     }
 

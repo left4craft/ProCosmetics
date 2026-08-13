@@ -24,6 +24,10 @@ dependencies {
     implementation("com.github.FilleDev:NoteBlockAPI:1.7.0")
     implementation("org.mongodb:mongodb-driver-sync:5.8.0")
     implementation("com.zaxxer:HikariCP:7.1.0")
+    implementation("org.postgresql:postgresql:42.7.13") // Not bundled by Spigot, so shaded
+    {
+        exclude(group = "org.checkerframework") // Compile-time annotations only
+    }
     implementation("redis.clients:jedis:7.5.2")
     implementation("org.bstats:bstats-bukkit:3.2.1")
     compileOnly("org.xerial:sqlite-jdbc:3.53.2.0") // Included in Spigot

@@ -32,6 +32,9 @@ tasks.processResources {
 tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier.set("")
 
+    // Merge META-INF/services files and rewrite their entries to relocated class names
+    mergeServiceFiles()
+
     // Relocate libs that are not exposed in the API module
     val basePackage = "se.filledev.procosmetics.libs"
 
@@ -39,6 +42,7 @@ tasks.named<ShadowJar>("shadowJar") {
         "dev.dejvokep.boostedyaml" to "boostedyaml",
         "com.zaxxer.hikari" to "hikari",
         "com.mongodb" to "mongodb",
+        "org.postgresql" to "postgresql",
         "redis.clients" to "jedis",
         "org.bstats" to "bstats"
     )
